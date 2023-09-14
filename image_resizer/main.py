@@ -5,7 +5,7 @@ from tkinter import filedialog, messagebox
 import ttkbootstrap as ttk
 from PIL import Image, ImageTk
 
-from ImageResizer.models.pdf_generator import PDFGenerator
+from image_resizer.models.pdf_generator import PDFGenerator
 import os
 from pathlib import Path
 
