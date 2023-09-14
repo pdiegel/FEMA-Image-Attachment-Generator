@@ -1,6 +1,5 @@
-import copy
 import logging
-from typing import Dict, List, Tuple, Union
+from typing import Dict, Tuple, Union
 
 from PIL import Image
 from reportlab.lib.pagesizes import letter
@@ -11,7 +10,8 @@ from ttkbootstrap import Entry, PhotoImage
 class PDFGenerator:
     """Generates a PDF file from a given text and image data."""
 
-    IMAGE_DIMENSIONS = (250, 250)
+    IMAGE_DIMENSIONS = (275, 275)
+    STATE = "FL"
 
     def __init__(
         self,
@@ -108,6 +108,12 @@ class PDFGenerator:
 got {type(value)}"
                 )
 
+        city = new_text_data.get("city", None)
+        zip_code = new_text_data.get("zip_code", None)
+        if city and zip_code:
+            new_text_data["city"] = f"{city}, {self.STATE}, {zip_code}"
+            new_text_data.pop("zip_code")
+
         return new_text_data
 
     def parse_image_data(
@@ -187,27 +193,58 @@ got {type(value)}"
         """
         pdf_canvas = canvas.Canvas(save_path, pagesize=letter)
         image_width, image_height = self.image_dimensions
-        logging.debug(letter[1])
+
+        start_y = letter[1] - len(self.text_data.items()) * 20
+        logging.debug(f"Start Y: {start_y}")
+
+        padding_x = (letter[0] - image_width * 2) / 3
+        padding_y = (start_y - image_height * 2) / 3
+        logging.debug(f"Padding Y: {padding_y}")
+
         x = letter[0] / 2
-        y = letter[1] - 20
+        y = letter[1] - padding_y / 3
         for entry, text in self.text_data.items():
+            y -= 20
             logging.debug(type(entry))
             logging.debug(entry)
 
             logging.debug(type(text))
             logging.debug(text)
+            if entry == "note":
+                y -= 5
             pdf_canvas.drawCentredString(x, y, text)
-            y -= 20
 
-        for image_path, (image, text) in self.image_data.items():
+        pdf_canvas.line(padding_x, y + 15, letter[0] - padding_x, y + 15)
+        pdf_canvas.line(padding_x, y - 5, letter[0] - padding_x, y - 5)
+
+        # Place images in PDF
+
+        x = padding_x
+        y = start_y - padding_y
+
+        for image_path, (image, description) in self.image_data.items():
+            logging.debug(f"Y: {y}")
+            if y <= padding_y:
+                y = start_y - padding_y
+                x += image_width + padding_x
             image.save(image_path)
+            y -= image_height
 
             pdf_canvas.drawInlineImage(
-                image_path, 500, 500, width=image_width, height=image_height
+                image_path, x, y, width=image_width, height=image_height
             )
-
-            # Place text above image
-            pdf_canvas.drawAlignedString(500, 100 + image_height + 10, text)
+            image_border = [
+                (x, y, x + image_width, y),
+                (x + image_width, y, x + image_width, y + image_height),
+                (x + image_width, y + image_height, x, y + image_height),
+                (x, y + image_height, x, y),
+            ]
+            pdf_canvas.lines(image_border)
+            # Place centered description text below image
+            pdf_canvas.drawCentredString(
+                x + image_width / 2, y - 15, description
+            )
+            y -= padding_y
 
         # Save PDF
         pdf_canvas.save()

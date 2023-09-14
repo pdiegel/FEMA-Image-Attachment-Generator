@@ -1,19 +1,27 @@
-from PIL import Image, ImageTk
-
-import ttkbootstrap as ttk
-from tkinter import filedialog, messagebox
 import logging
 from functools import partial
+from tkinter import filedialog, messagebox
+
+import ttkbootstrap as ttk
+from PIL import Image, ImageTk
+
 from models.pdf_generator import PDFGenerator
 
 
 class FEMAImageAttacher(ttk.Window):
-    STATE = "FL"
+    """A GUI for attaching additional images to a FEMA Elevation
+    Certificate.
+
+    Args:
+        ttk.Window: A ttkbootstrap window.
+    """
+
     ASTERISK_NOTE = "* Attachment page to FEMA Elevation Certificate"
     VIEWABLE_IMAGE_SIZE = (200, 200)
     PDF_SAVE_PATH = "test.pdf"
 
     def __init__(self):
+        """Initializes the FEMAImageAttacher class."""
         super().__init__(title="FEMA Image Attacher")
         self.resizable(False, False)
         self.inputs = {}
@@ -21,10 +29,11 @@ class FEMAImageAttacher(ttk.Window):
         self.draw_widgets()
 
         # For testing purposes
-        for key, value in self.inputs.items():
-            value.insert(0, key)
+        # for key, value in self.inputs.items():
+        #     value.insert(0, key)
 
-    def draw_widgets(self):
+    def draw_widgets(self) -> None:
+        """Draws the widgets for the FEMAImageAttacher class."""
         ttk.Label(self, text="FEMA Image Attacher", font=("Arial", 20)).pack(
             pady=15
         )
@@ -40,33 +49,63 @@ class FEMAImageAttacher(ttk.Window):
         generate_button.pack(pady=15, ipadx=10, ipady=5)
         generate_button.configure(style="primary.TButton")
 
-    def draw_input_section(self):
-        self.create_label_entry(
-            variable_name="file_number", label="File Number"
-        )
-        self.create_label_entry(
-            variable_name="address", label="Property Address"
-        )
-        self.create_label_entry(variable_name="city", label="City")
-        self.create_label_entry(variable_name="zip_code", label="Zip Code")
-        self.create_label_entry(
+    def draw_input_section(self) -> None:
+        """Draws the input section of the FEMAImageAttacher class."""
+        self.draw_label_entry(variable_name="file_number", label="File Number")
+        self.draw_label_entry(variable_name="address", label="Property Address")
+        self.draw_label_entry(variable_name="city", label="City")
+        self.draw_label_entry(variable_name="zip_code", label="Zip Code")
+        self.draw_label_entry(
             variable_name="note",
             label="Asterisk Note",
             default_entry_value=self.ASTERISK_NOTE,
         )
 
-    def draw_image_attachment_section(self):
+    def draw_label_entry(
+        self,
+        variable_name: str,
+        label: str,
+        default_entry_value: str = "",
+    ) -> None:
+        """Creates a label and entry widget.
+
+        Args:
+            variable_name (str): The name of the variable to store the
+                entry value in.
+            label (str): The label to display.
+            default_entry_value (str, optional): The default value of
+                the entry. Defaults to "".
+        """
+
+        row = ttk.Frame(self)
+        row.pack(pady=5, padx=25)
+        ttk.Label(row, text=label, width=20).pack(side="left")
+        self.inputs[variable_name] = ttk.Entry(row, width=50)
+        self.inputs[variable_name].pack(side="left", padx=5)
+
+        if default_entry_value:
+            self.inputs[variable_name].insert(0, default_entry_value)
+
+    def draw_image_attachment_section(self) -> None:
+        """Draws the image attachment section of the FEMAImageAttacher
+        class.
+        """
         attachment_row = ttk.Frame(self)
         attachment_row.pack(pady=15)
-        self.create_attachment_frame(attachment_row)
-        self.create_attachment_frame(attachment_row)
+        self.draw_attachment_frame(attachment_row)
+        self.draw_attachment_frame(attachment_row)
 
         attachment_row = ttk.Frame(self)
         attachment_row.pack(pady=15)
-        self.create_attachment_frame(attachment_row)
-        self.create_attachment_frame(attachment_row)
+        self.draw_attachment_frame(attachment_row)
+        self.draw_attachment_frame(attachment_row)
 
-    def create_attachment_frame(self, master: ttk.Frame):
+    def draw_attachment_frame(self, master: ttk.Frame) -> None:
+        """Creates an attachment frame.
+
+        Args:
+            master (ttk.Frame): The master frame.
+        """
         frame = ttk.Frame(master)
         frame.pack(side="left", padx=25)
 
@@ -100,8 +139,18 @@ class FEMAImageAttacher(ttk.Window):
         clear_button.pack(side="left", padx=5)
         button_frame.pack(pady=5)
 
-    def attach_image(self, label: ttk.Label, description: ttk.Entry):
-        file_path = filedialog.askopenfilename(filetypes=[("PNG", "*.png")])
+    def attach_image(self, label: ttk.Label, description: ttk.Entry) -> None:
+        """Attaches an image to the label.
+
+        Args:
+            label (ttk.Label): The label to attach the image to.
+            description (ttk.Entry): The description of the image.
+        """
+
+        # PNG, JPG and JPEG files only
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Image Files", "*.png *.jpg *.jpeg")]
+        )
         logging.info(f"File path: {file_path}")
 
         if file_path in self.images.keys():
@@ -117,13 +166,27 @@ class FEMAImageAttacher(ttk.Window):
 
         logging.debug(f"Images: {self.images}")
 
-    def define_image(self, image_path: str, description: str):
+    def define_image(self, image_path: str, description: str) -> None:
+        """Defines an image in the self.images attribute.
+
+        Args:
+            image_path (str): The path to the image.
+            description (str): The description of the image.
+        """
+
         self.images[image_path] = (
             self.resize_image_to_fit(image_path),
             description,
         )
 
-    def display_image(self, image_path: str, label: ttk.Label = None):
+    def display_image(self, image_path: str, label: ttk.Label = None) -> None:
+        """Displays an image in the label.
+
+        Args:
+            image_path (str): The path to the image.
+            label (ttk.Label, optional): The label to display the image
+                in. Defaults to None.
+        """
         # Set the image of the label to the self.images[image_path][0]
         image = self.images[image_path][0]
         if label:
@@ -131,7 +194,13 @@ class FEMAImageAttacher(ttk.Window):
         else:
             ttk.Label(self, image=image).pack(pady=15)
 
-    def clear_image(self, label: ttk.Label, description: ttk.Entry):
+    def clear_image(self, label: ttk.Label, description: ttk.Entry) -> None:
+        """Clears an image from the label.
+
+        Args:
+            label (ttk.Label): The label to clear the image from.
+            description (ttk.Entry): The description of the image.
+        """
         logging.debug(f"Images: {self.images}")
 
         # Get the image path from the label
@@ -139,6 +208,7 @@ class FEMAImageAttacher(ttk.Window):
             if description == entry:
                 logging.info(f"Clearing image {image_path}")
                 self.images.pop(image_path, None)
+                logging.info(f"{image_path} removed from self.images")
                 break
 
         description.delete(0, "end")
@@ -146,36 +216,39 @@ class FEMAImageAttacher(ttk.Window):
         label.pack_configure(pady=90, padx=50)
         logging.debug(f"Images: {self.images}")
 
-    def resize_image_to_fit(self, image_path: str):
+    def resize_image_to_fit(self, image_path: str) -> ImageTk.PhotoImage:
+        """Resizes an image to the dimensions specified in the
+        VIEWABLE_IMAGE_SIZE attribute.
+
+        Args:
+            image_path (str): The path to the image to resize.
+
+        Returns:
+            ImageTk.PhotoImage: The resized image.
+        """
+        logging.info(f"Resizing image {image_path}")
         img = Image.open(image_path)
         img = img.resize(self.VIEWABLE_IMAGE_SIZE)
+        logging.info(f"Image resized to {self.VIEWABLE_IMAGE_SIZE}")
         return ImageTk.PhotoImage(img)
 
-    def error_popup(self, message: str):
+    def error_popup(self, message: str) -> None:
+        """Displays an error popup.
+
+        Args:
+            message (str): The message to display in the popup.
+        """
         messagebox.showerror("Error", message)
 
-    def create_label_entry(
-        self,
-        variable_name: str,
-        label: str,
-        default_entry_value: str = "",
-    ):
-        row = ttk.Frame(self)
-        row.pack(pady=5, padx=25)
-        ttk.Label(row, text=label, width=20).pack(side="left")
-        self.inputs[variable_name] = ttk.Entry(row, width=50)
-        self.inputs[variable_name].pack(side="left", padx=5)
+    def generate_pdf(self) -> None:
+        """Generates a PDF."""
 
-        if default_entry_value:
-            self.inputs[variable_name].insert(0, default_entry_value)
-
-    def generate_pdf(self):
         logging.info("Generating PDF")
-        logging.info(f"Inputs: {self.inputs}")
         for input in self.inputs.values():
             logging.info(f"Input: {input.get()}")
         pdf_generator = PDFGenerator(self.inputs, self.images)
         pdf_generator.generate_pdf(self.PDF_SAVE_PATH)
+
         logging.info(f"PDF saved to {self.PDF_SAVE_PATH}")
 
 
