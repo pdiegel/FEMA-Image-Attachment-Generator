@@ -1,67 +1,17 @@
 from PIL import Image, ImageTk
-from reportlab.pdfgen import canvas
+
 import ttkbootstrap as ttk
-from tkinter import filedialog
-
-img_height = 450
-img_width = 450
-
-
-# Resize images to 450x450 px
-def resize_image(image_path):
-    img = Image.open(image_path)
-    img = img.resize((img_width, img_height))
-    return img
-
-
-# Paths to your 4 images
-texts = ["text1", "text2", "text3", "text4"]
-image_paths = ["img.png", "img.png", "img.png", "img.png"]
-resized_images = [resize_image(p) for p in image_paths]
-
-
-# Add padding between images
-padding = 50
-
-# Calculate PDF dimensions
-# 2 images wide and 2 images high, each 450 px plus padding between them
-pdf_width = 2 * img_width + padding * 3
-pdf_height = 2 * img_height + padding * 3
-
-# Position for the 1st image (lower-left corner)
-x, y = padding, img_height + padding * 2
-
-# Create a PDF using reportlab
-c = canvas.Canvas("output.pdf", pagesize=(pdf_width, pdf_height))
-
-for i, (img, text) in enumerate(zip(resized_images, texts)):
-    # Convert PIL Image to reportlab Image
-    img_path = f"temp_img{i}.png"
-    img.save(img_path)
-
-    # Place image on PDF
-    c.drawInlineImage(img_path, x, y, width=img_width, height=img_height)
-
-    # Place text above image
-    c.drawAlignedString(x, y + img_height + 10, text)
-
-    # Adjust x and y coordinates
-    if i == 0:  # Move right for the 2nd image
-        x += img_width + padding
-    elif i == 1:  # Move down and left for the 3rd image
-        x = 50
-        y -= img_height + padding
-    elif i == 2:  # Move right for the 4th image
-        x += img_width + padding
-
-# Save PDF
-c.save()
+from tkinter import filedialog, messagebox
+import logging
+from functools import partial
+from models.pdf_generator import PDFGenerator
 
 
 class FEMAImageAttacher(ttk.Window):
     STATE = "FL"
     ASTERISK_NOTE = "* Attachment page to FEMA Elevation Certificate"
     VIEWABLE_IMAGE_SIZE = (200, 200)
+    PDF_SAVE_PATH = "test.pdf"
 
     def __init__(self):
         super().__init__(title="FEMA Image Attacher")
@@ -70,6 +20,10 @@ class FEMAImageAttacher(ttk.Window):
         self.images = {}
         self.draw_widgets()
 
+        # For testing purposes
+        for key, value in self.inputs.items():
+            value.insert(0, key)
+
     def draw_widgets(self):
         ttk.Label(self, text="FEMA Image Attacher", font=("Arial", 20)).pack(
             pady=15
@@ -77,8 +31,14 @@ class FEMAImageAttacher(ttk.Window):
         self.draw_input_section()
         self.draw_image_attachment_section()
 
-        # self.define_image("img.png")
-        # self.display_image()
+        button_font = ("Arial", 16, "bold")
+        button_style = ttk.Style()
+        button_style.configure("primary.TButton", font=button_font)
+        generate_button = ttk.Button(
+            self, text="Generate PDF", command=self.generate_pdf
+        )
+        generate_button.pack(pady=15, ipadx=10, ipady=5)
+        generate_button.configure(style="primary.TButton")
 
     def draw_input_section(self):
         self.create_label_entry(
@@ -108,7 +68,7 @@ class FEMAImageAttacher(ttk.Window):
 
     def create_attachment_frame(self, master: ttk.Frame):
         frame = ttk.Frame(master)
-        frame.pack(side="left", padx=25, pady=10)
+        frame.pack(side="left", padx=25)
 
         image_frame = ttk.Frame(frame, borderwidth=2, relief="groove")
         image_frame.pack()
@@ -121,45 +81,78 @@ class FEMAImageAttacher(ttk.Window):
         image_description.pack(pady=5)
 
         button_frame = ttk.Frame(frame)
+
+        attach_command = partial(
+            self.attach_image, image_placeholder, image_description
+        )
         attach_button = ttk.Button(
-            frame,
-            text="Attach Image",
-            command=lambda label=image_placeholder: self.attach_image(label),
+            frame, text="Attach Image", command=attach_command
+        )
+
+        clear_command = partial(
+            self.clear_image, image_placeholder, image_description
         )
         clear_button = ttk.Button(
-            frame,
-            text="Clear Image",
-            command=lambda label=image_placeholder: self.clear_image(label),
+            frame, text="Clear Image", command=clear_command
         )
+
         attach_button.pack(side="left", padx=5)
         clear_button.pack(side="left", padx=5)
         button_frame.pack(pady=5)
 
-    def attach_image(self, label: ttk.Label):
+    def attach_image(self, label: ttk.Label, description: ttk.Entry):
         file_path = filedialog.askopenfilename(filetypes=[("PNG", "*.png")])
+        logging.info(f"File path: {file_path}")
+
+        if file_path in self.images.keys():
+            logging.info("Image already attached")
+            self.error_popup("Image already attached")
+            return
+
         if file_path:
-            self.define_image(file_path)
+            logging.info(f"Attaching image {file_path}")
+            self.define_image(file_path, description)
             self.display_image(file_path, label)
             label.pack_configure(pady=0, padx=0)
 
-    def define_image(self, image_path: str):
-        self.images[image_path] = self.resize_image_to_fit(image_path)
+        logging.debug(f"Images: {self.images}")
+
+    def define_image(self, image_path: str, description: str):
+        self.images[image_path] = (
+            self.resize_image_to_fit(image_path),
+            description,
+        )
 
     def display_image(self, image_path: str, label: ttk.Label = None):
-        # Set the image of the label to the self.images[image_index]
+        # Set the image of the label to the self.images[image_path][0]
+        image = self.images[image_path][0]
         if label:
-            label.configure(image=self.images[image_path])
+            label.configure(image=image)
         else:
-            ttk.Label(self, image=self.images[image_path]).pack(pady=15)
+            ttk.Label(self, image=image).pack(pady=15)
 
-    def clear_image(self, label: ttk.Label):
+    def clear_image(self, label: ttk.Label, description: ttk.Entry):
+        logging.debug(f"Images: {self.images}")
+
+        # Get the image path from the label
+        for image_path, (_, entry) in self.images.items():
+            if description == entry:
+                logging.info(f"Clearing image {image_path}")
+                self.images.pop(image_path, None)
+                break
+
+        description.delete(0, "end")
         label.configure(image="")
         label.pack_configure(pady=90, padx=50)
+        logging.debug(f"Images: {self.images}")
 
     def resize_image_to_fit(self, image_path: str):
         img = Image.open(image_path)
         img = img.resize(self.VIEWABLE_IMAGE_SIZE)
         return ImageTk.PhotoImage(img)
+
+    def error_popup(self, message: str):
+        messagebox.showerror("Error", message)
 
     def create_label_entry(
         self,
@@ -176,7 +169,17 @@ class FEMAImageAttacher(ttk.Window):
         if default_entry_value:
             self.inputs[variable_name].insert(0, default_entry_value)
 
+    def generate_pdf(self):
+        logging.info("Generating PDF")
+        logging.info(f"Inputs: {self.inputs}")
+        for input in self.inputs.values():
+            logging.info(f"Input: {input.get()}")
+        pdf_generator = PDFGenerator(self.inputs, self.images)
+        pdf_generator.generate_pdf(self.PDF_SAVE_PATH)
+        logging.info(f"PDF saved to {self.PDF_SAVE_PATH}")
+
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     app = FEMAImageAttacher()
     app.mainloop()
