@@ -5,7 +5,9 @@ from tkinter import filedialog, messagebox
 import ttkbootstrap as ttk
 from PIL import Image, ImageTk
 
-from models.pdf_generator import PDFGenerator
+from ImageResizer.models.pdf_generator import PDFGenerator
+import os
+from pathlib import Path
 
 
 class FEMAImageAttacher(ttk.Window):
@@ -18,7 +20,10 @@ class FEMAImageAttacher(ttk.Window):
 
     ASTERISK_NOTE = "* Attachment page to FEMA Elevation Certificate"
     VIEWABLE_IMAGE_SIZE = (200, 200)
-    PDF_SAVE_PATH = "test.pdf"
+    WINDOWS_DESKTOP_DIR = Path(
+        os.path.join(os.path.join(os.environ["USERPROFILE"]), "Desktop")
+    )
+    SAVE_DIR = WINDOWS_DESKTOP_DIR / "FEMA IMAGE ATTACHMENTS"
 
     def __init__(self):
         """Initializes the FEMAImageAttacher class."""
@@ -27,6 +32,9 @@ class FEMAImageAttacher(ttk.Window):
         self.inputs = {}
         self.images = {}
         self.draw_widgets()
+
+        if not self.SAVE_DIR.exists():
+            os.makedirs(self.SAVE_DIR, exist_ok=True)
 
         # For testing purposes
         # for key, value in self.inputs.items():
@@ -247,9 +255,14 @@ class FEMAImageAttacher(ttk.Window):
         for input in self.inputs.values():
             logging.info(f"Input: {input.get()}")
         pdf_generator = PDFGenerator(self.inputs, self.images)
-        pdf_generator.generate_pdf(self.PDF_SAVE_PATH)
 
-        logging.info(f"PDF saved to {self.PDF_SAVE_PATH}")
+        pdf_file_name = (self.inputs["address"].get() + ".pdf").upper().strip()
+        pdf_generator.generate_pdf(pdf_file_name)
+
+        pdf_save_location = self.SAVE_DIR / pdf_file_name
+        os.rename(pdf_file_name, pdf_save_location)
+
+        logging.info(f"PDF saved to {pdf_save_location}")
 
 
 if __name__ == "__main__":
