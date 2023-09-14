@@ -1,13 +1,13 @@
 import logging
+import os
 from functools import partial
+from pathlib import Path
 from tkinter import filedialog, messagebox
 
 import ttkbootstrap as ttk
 from PIL import Image, ImageTk
 
 from image_resizer.models.pdf_generator import PDFGenerator
-import os
-from pathlib import Path
 
 
 class FEMAImageAttacher(ttk.Window):

@@ -1,0 +1,2 @@
+pyinstaller --add-data 'C:\Users\redst\OneDrive\Documents\GitHub\ImageResizer\.venv\Lib\site-packages\reportlab;reportlab' image_resizer/main.py
+pyinstaller main.spec
