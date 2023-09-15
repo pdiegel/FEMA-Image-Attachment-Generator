@@ -175,15 +175,15 @@ got {type(value)}"
         padding_x = (letter[0] - image_width * 2) / 3
         padding_y = (start_y - image_height * 2) / 3
 
-        self.draw_text(pdf_canvas, start_y)
-        self.draw_lines(pdf_canvas, start_y, padding_x)
+        self.draw_text(pdf_canvas, padding_y)
+        self.draw_lines(pdf_canvas, start_y - 23, padding_x)
         self.draw_images(
             pdf_canvas, start_y, padding_x, padding_y, image_width, image_height
         )
 
         pdf_canvas.save()
 
-    def draw_text(self, pdf_canvas: canvas.Canvas, start_y: int) -> None:
+    def draw_text(self, pdf_canvas: canvas.Canvas, padding_y: int) -> None:
         """Draws text to the PDF.
 
         Args:
@@ -191,7 +191,7 @@ got {type(value)}"
             y (int): The y coordinate.
         """
         x = letter[0] / 2
-        y = letter[1] - start_y / 3
+        y = letter[1] - padding_y / 3
         for entry, text in self.text_data.items():
             y -= 20
             if entry == "note":

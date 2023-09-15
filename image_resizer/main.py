@@ -167,6 +167,10 @@ class FEMAImageAttacher(ttk.Window):
             self.error_popup("Image already attached")
             return
 
+        if label["image"]:
+            logging.info("Replaced image with new image")
+            self.clear_image(label, description)
+
         if file_path:
             logging.info(f"Attaching image {file_path}")
             self.define_image(file_path, description)
