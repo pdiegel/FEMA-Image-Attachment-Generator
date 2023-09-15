@@ -43,7 +43,6 @@ class PDFGenerator:
         self.image_data = self.parse_image_data(image_data)
         self.image_dimensions = image_dimensions
         self.resize_images()
-        self.pdf_dimensions = self.calculate_pdf_dimensions()
 
     def validate_data(
         self,
