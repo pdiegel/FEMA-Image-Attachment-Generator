@@ -39,7 +39,10 @@ This Python application allows you to create a PDF with up to 4 images, along wi
 ## Usage
 
 Run `main.py` to start the application.
-```python -m FEMA_Attachment_Generator.main```
+
+``` bash
+python -m FEMA_Attachment_Generator.main
+```
 
 ### GUI Interface
 
