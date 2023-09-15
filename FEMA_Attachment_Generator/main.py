@@ -28,7 +28,7 @@ class FEMAImageAttacher(ttk.Window):
     def __init__(self):
         """Initializes the FEMAImageAttacher class."""
 
-        super().__init__(title="FEMA Image Attacher")
+        super().__init__(title="FEMA Attachment Generator")
         self.resizable(False, False)
         self.inputs = {}
         self.images = {}
@@ -39,9 +39,9 @@ class FEMAImageAttacher(ttk.Window):
 
     def draw_widgets(self) -> None:
         """Draws the widgets for the FEMAImageAttacher class."""
-        ttk.Label(self, text="FEMA Image Attacher", font=("Arial", 14)).pack(
-            pady=10
-        )
+        ttk.Label(
+            self, text="FEMA Attachment Generator", font=("Arial", 14)
+        ).pack(pady=10)
         self.draw_input_section()
         self.draw_image_attachment_section()
 
