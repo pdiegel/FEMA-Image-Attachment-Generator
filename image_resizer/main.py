@@ -29,6 +29,7 @@ class FEMAImageAttacher(ttk.Window):
         """Initializes the FEMAImageAttacher class."""
 
         super().__init__(title="FEMA Image Attacher")
+        self.resizable(False, False)
         self.inputs = {}
         self.images = {}
         self.draw_widgets()
