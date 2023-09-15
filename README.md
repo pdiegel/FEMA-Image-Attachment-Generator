@@ -19,11 +19,11 @@ This Python application allows you to create a PDF with up to 4 images, along wi
 ## Installation
 
 1. Clone this repository
-    ```git clone <https://github.com/yourusername/FEMA-Image-Attachment-Generator.git>```
+   - ```git clone <https://github.com/yourusername/FEMA-Image-Attachment-Generator.git>```
 2. Navigate to the repository folder
-    ```cd FEMA-Image-Attachment-Generator```
+   - ```cd FEMA-Image-Attachment-Generator```
 3. Install the required packages
-    ```pip install -r requirements.txt```
+   - ```pip install -r requirements.txt```
 
 ## Usage
 
