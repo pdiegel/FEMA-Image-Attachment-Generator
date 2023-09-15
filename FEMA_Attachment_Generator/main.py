@@ -7,7 +7,7 @@ from tkinter import filedialog, messagebox
 import ttkbootstrap as ttk
 from PIL import Image, ImageTk
 
-from image_resizer.models.pdf_generator import PDFGenerator
+from FEMA_Attachment_Generator.models.pdf_generator import PDFGenerator
 
 
 class FEMAImageAttacher(ttk.Window):
