@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 from PIL import Image
 from reportlab.lib.pagesizes import letter
@@ -15,16 +15,16 @@ class PDFGenerator:
 
     def __init__(
         self,
-        text_data: Dict[Entry, Union[str, Entry]],
-        image_data: Dict[str, Tuple[Union[PhotoImage, Entry]]],
+        text_data: Dict[str, Union[str, Entry]],
+        image_data: Dict[str, Tuple[PhotoImage, Entry]],
         image_dimensions: Tuple[int, int] = IMAGE_DIMENSIONS,
     ) -> None:
         """Initializes the PDFGenerator class.
 
         Args:
-            text_data (Dict[Entry, Union[str, Entry]]): A dict of text
+            text_data (Dict[str, Union[str, Entry]]): A dict of text
                 data.
-            image_data (Dict[str, Tuple[Union[PhotoImage, Entry]]]): A
+            image_data Dict[str, Tuple[PhotoImage, Entry]]): A
                 dict of image data.
             image_dimensions (Tuple[int, int], optional): The dimensions
                 of the images in the PDF. Defaults to IMAGE_DIMENSIONS.
@@ -47,17 +47,17 @@ class PDFGenerator:
 
     def validate_data(
         self,
-        text_data: Dict[Entry, Union[str, Entry]],
-        image_data: Dict[str, Tuple[Union[PhotoImage, Entry]]],
+        text_data: Dict[str, Union[str, Entry]],
+        image_data: Dict[str, Tuple[PhotoImage, Entry]],
         image_dimensions: Tuple[int, int],
     ) -> None:
         """Validates the text and image data. Raises TypeError if either
         is not a dict.
 
         Args:
-            text_data (Dict[Entry, Union[str, Entry]]): A dict of text
+            text_data (Dict[str, Union[str, Entry]]): A dict of text
                 data.
-            image_data (Dict[str, Tuple[Union[PhotoImage, Entry]]]): A
+            image_data Dict[str, Tuple[PhotoImage, Entry]]): A
                 dict of image data.
             image_dimensions (Tuple[int, int]): The dimensions of the
                 images in the PDF.
@@ -81,16 +81,17 @@ class PDFGenerator:
             )
 
     def parse_text_data(
-        self, text_data: Dict[Entry, Union[str, Entry]]
-    ) -> dict:
+        self, text_data: Dict[str, Union[str, Entry]]
+    ) -> Dict[str, str]:
         """Converts all text data to uppercase. Returns a new dict.
 
         Args:
-            text_data (Dict[Entry, Union[str, Entry]]): A dict of text
+            text_data (Dict[str, Union[str, Entry]]): A dict of text
                 data.
 
         Returns:
-            dict: A new dict with all text data converted to uppercase.
+            Dict[str, str]: A new dict with all text data converted to
+                uppercase.
 
         Raises:
             TypeError: If any value in text_data is not of type str or
@@ -117,17 +118,18 @@ got {type(value)}"
         return new_text_data
 
     def parse_image_data(
-        self, image_data: Dict[str, Tuple[Union[PhotoImage, Entry]]]
-    ) -> dict:
+        self, image_data: Dict[str, Tuple[PhotoImage, Entry]]
+    ) -> Dict[str, List[Union[PhotoImage, str]]]:
         """Parses the image data to a format that can be used by the
         generate_pdf method.
 
         Args:
-            image_data (Dict[str, Tuple[Union[PhotoImage, Entry]]]): A
+            image_data Dict[str, Tuple[PhotoImage, Entry]]): A
                 dict of image data.
 
         Returns:
-            dict: A new dict of image data.
+            Dict[str, List[Union[PhotoImage, str]]]: A dict of image
+                data.
         """
         new_image_data = image_data.copy()
         for image_path, (image, entry) in image_data.items():
@@ -156,34 +158,10 @@ got {type(value)}"
 
     def resize_images(self) -> None:
         """Resizes all images in the image_data attribute."""
+        logging.debug(f"Image data before resizing: {self.image_data}")
         for image_path in self.image_data.keys():
             self.image_data[image_path][0] = self.resize_image(image_path)
-
-    def calculate_pdf_dimensions(self) -> Tuple[int, int]:
-        """Calculates the dimensions of the PDF based on the number of
-        images.
-
-        Returns:
-            Tuple[int, int]: The dimensions of the PDF.
-        """
-        num_images = len(self.image_data.keys())
-        if num_images == 1:
-            return self.image_dimensions
-        elif num_images == 2:
-            return (
-                self.image_dimensions[0] * 2,
-                self.image_dimensions[1],
-            )
-        elif num_images == 3:
-            return (
-                self.image_dimensions[0],
-                self.image_dimensions[1] * 2,
-            )
-        elif num_images == 4:
-            return (
-                self.image_dimensions[0] * 2,
-                self.image_dimensions[1] * 2,
-            )
+        logging.debug(f"Image data after resizing: {self.image_data}")
 
     def generate_pdf(self, save_path: str) -> None:
         """Generates a PDF based on the text and image data.
@@ -195,56 +173,102 @@ got {type(value)}"
         image_width, image_height = self.image_dimensions
 
         start_y = letter[1] - len(self.text_data.items()) * 20
-        logging.debug(f"Start Y: {start_y}")
-
         padding_x = (letter[0] - image_width * 2) / 3
         padding_y = (start_y - image_height * 2) / 3
-        logging.debug(f"Padding Y: {padding_y}")
 
+        self.draw_text(pdf_canvas, start_y)
+        self.draw_lines(pdf_canvas, start_y, padding_x)
+        self.draw_images(
+            pdf_canvas, start_y, padding_x, padding_y, image_width, image_height
+        )
+
+        pdf_canvas.save()
+
+    def draw_text(self, pdf_canvas: canvas.Canvas, start_y: int) -> None:
+        """Draws text to the PDF.
+
+        Args:
+            pdf_canvas (canvas.Canvas): The PDF canvas.
+            y (int): The y coordinate.
+        """
         x = letter[0] / 2
-        y = letter[1] - padding_y / 3
+        y = letter[1] - start_y / 3
         for entry, text in self.text_data.items():
             y -= 20
-            logging.debug(type(entry))
-            logging.debug(entry)
-
-            logging.debug(type(text))
-            logging.debug(text)
             if entry == "note":
                 y -= 5
             pdf_canvas.drawCentredString(x, y, text)
 
+    def draw_lines(
+        self, pdf_canvas: canvas.Canvas, y: int, padding_x: int
+    ) -> None:
+        """Draws lines to the PDF.
+
+        Args:
+            pdf_canvas (canvas.Canvas): The PDF canvas.
+            y (int): The y coordinate.
+            padding_x (int): The x padding.
+        """
         pdf_canvas.line(padding_x, y + 15, letter[0] - padding_x, y + 15)
         pdf_canvas.line(padding_x, y - 5, letter[0] - padding_x, y - 5)
 
-        # Place images in PDF
+    def draw_images(
+        self,
+        pdf_canvas: canvas.Canvas,
+        start_y: int,
+        padding_x: int,
+        padding_y: int,
+        image_width: int,
+        image_height: int,
+    ) -> None:
+        """Draws images to the PDF.
 
+        Args:
+            pdf_canvas (canvas.Canvas): The PDF canvas.
+            start_y (int): The starting y coordinate.
+            padding_x (int): The x padding.
+            padding_y (int): The y padding.
+            image_width (int): The image width.
+            image_height (int): The image height.
+        """
         x = padding_x
         y = start_y - padding_y
-
         for image_path, (image, description) in self.image_data.items():
-            logging.debug(f"Y: {y}")
             if y <= padding_y:
                 y = start_y - padding_y
                 x += image_width + padding_x
             image.save(image_path)
             y -= image_height
-
             pdf_canvas.drawInlineImage(
                 image_path, x, y, width=image_width, height=image_height
             )
-            image_border = [
-                (x, y, x + image_width, y),
-                (x + image_width, y, x + image_width, y + image_height),
-                (x + image_width, y + image_height, x, y + image_height),
-                (x, y + image_height, x, y),
-            ]
-            pdf_canvas.lines(image_border)
-            # Place centered description text below image
+            self.draw_image_border(pdf_canvas, x, y, image_width, image_height)
             pdf_canvas.drawCentredString(
                 x + image_width / 2, y - 15, description
             )
             y -= padding_y
 
-        # Save PDF
-        pdf_canvas.save()
+    def draw_image_border(
+        self,
+        pdf_canvas: canvas.Canvas,
+        x: int,
+        y: int,
+        image_width: int,
+        image_height: int,
+    ) -> None:
+        """Draws a border around an image.
+
+        Args:
+            pdf_canvas (canvas.Canvas): The PDF canvas.
+            x (int): The x coordinate.
+            y (int): The y coordinate.
+            image_width (int): The image width.
+            image_height (int): The image height.
+        """
+        image_border = [
+            (x, y, x + image_width, y),
+            (x + image_width, y, x + image_width, y + image_height),
+            (x + image_width, y + image_height, x, y + image_height),
+            (x, y + image_height, x, y),
+        ]
+        pdf_canvas.lines(image_border)

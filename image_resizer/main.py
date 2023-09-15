@@ -18,7 +18,7 @@ class FEMAImageAttacher(ttk.Window):
         ttk.Window: A ttkbootstrap window.
     """
 
-    ASTERISK_NOTE = "* Attachment page to FEMA Elevation Certificate"
+    ASTERISK_NOTE = "* Attachment page to FEMA Elevation Certificate *"
     VIEWABLE_IMAGE_SIZE = (200, 200)
     WINDOWS_DESKTOP_DIR = Path(
         os.path.join(os.path.join(os.environ["USERPROFILE"]), "Desktop")
@@ -35,10 +35,6 @@ class FEMAImageAttacher(ttk.Window):
 
         if not self.SAVE_DIR.exists():
             os.makedirs(self.SAVE_DIR, exist_ok=True)
-
-        # For testing purposes
-        # for key, value in self.inputs.items():
-        #     value.insert(0, key)
 
     def draw_widgets(self) -> None:
         """Draws the widgets for the FEMAImageAttacher class."""
@@ -114,38 +110,44 @@ class FEMAImageAttacher(ttk.Window):
         Args:
             master (ttk.Frame): The master frame.
         """
+        # Master Frame ---
         frame = ttk.Frame(master)
         frame.pack(side="left", padx=25)
 
+        # Image Frame ---
         image_frame = ttk.Frame(frame, borderwidth=2, relief="groove")
         image_frame.pack()
+
+        # Image Placeholder Text ---
         image_placeholder = ttk.Label(
             image_frame,
             text="Image Placeholder",
         )
+        # Padding is for a border while there is no image ---
         image_placeholder.pack(pady=90, padx=50)
+
+        # Image Description ---
         image_description = ttk.Entry(frame, width=30)
         image_description.pack(pady=5)
 
+        # Buttons ---
+        buttons = {
+            "Attach Image": self.attach_image,
+            "Clear Image": self.clear_image,
+        }
+
+        # Buttom Frame to place buttons in a row ---
         button_frame = ttk.Frame(frame)
-
-        attach_command = partial(
-            self.attach_image, image_placeholder, image_description
-        )
-        attach_button = ttk.Button(
-            frame, text="Attach Image", command=attach_command
-        )
-
-        clear_command = partial(
-            self.clear_image, image_placeholder, image_description
-        )
-        clear_button = ttk.Button(
-            frame, text="Clear Image", command=clear_command
-        )
-
-        attach_button.pack(side="left", padx=5)
-        clear_button.pack(side="left", padx=5)
         button_frame.pack(pady=5)
+
+        for button_text, command in buttons.items():
+            button = ttk.Button(
+                button_frame,
+                text=button_text,
+                # Both commands need these arguments. Revise if needed. ---
+                command=partial(command, image_placeholder, image_description),
+            )
+            button.pack(side="left", padx=5)
 
     def attach_image(self, label: ttk.Label, description: ttk.Entry) -> None:
         """Attaches an image to the label.
@@ -159,7 +161,6 @@ class FEMAImageAttacher(ttk.Window):
         file_path = filedialog.askopenfilename(
             filetypes=[("Image Files", "*.png *.jpg *.jpeg")]
         )
-        logging.info(f"File path: {file_path}")
 
         if file_path in self.images.keys():
             logging.info("Image already attached")
@@ -251,21 +252,34 @@ class FEMAImageAttacher(ttk.Window):
     def generate_pdf(self) -> None:
         """Generates a PDF."""
 
+        # For testing purposes
+        # for key, value in self.inputs.items():
+        #     value.insert(0, key)
+        # for _, (_, description) in self.images.items():
+        #     logging.debug(f"Description: {description}")
+        #     description.insert(0, "Test Description")
+
         logging.info("Generating PDF")
-        for input in self.inputs.values():
-            logging.info(f"Input: {input.get()}")
+        for label, input in self.inputs.items():
+            logging.info(f"{label} Input: {input.get()}")
         pdf_generator = PDFGenerator(self.inputs, self.images)
 
         pdf_file_name = (self.inputs["address"].get() + ".pdf").upper().strip()
         pdf_generator.generate_pdf(pdf_file_name)
 
         pdf_save_location = self.SAVE_DIR / pdf_file_name
+        if pdf_save_location.exists():
+            logging.info(f"PDF already exists at {pdf_save_location}")
+            pdf_save_location.unlink()
+            logging.info(f"PDF deleted at {pdf_save_location}")
+
         os.rename(pdf_file_name, pdf_save_location)
 
         logging.info(f"PDF saved to {pdf_save_location}")
+        messagebox.showinfo("Success", f"PDF saved as {pdf_file_name}")
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(filename="logs.log", filemode="w", level=logging.INFO)
     app = FEMAImageAttacher()
     app.mainloop()
