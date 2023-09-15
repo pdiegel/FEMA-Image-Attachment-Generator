@@ -19,7 +19,7 @@ class FEMAImageAttacher(ttk.Window):
     """
 
     ASTERISK_NOTE = "* Attachment page to FEMA Elevation Certificate *"
-    VIEWABLE_IMAGE_SIZE = (200, 200)
+    VIEWABLE_IMAGE_SIZE = (150, 150)
     WINDOWS_DESKTOP_DIR = Path(
         os.path.join(os.path.join(os.environ["USERPROFILE"]), "Desktop")
     )
@@ -27,8 +27,8 @@ class FEMAImageAttacher(ttk.Window):
 
     def __init__(self):
         """Initializes the FEMAImageAttacher class."""
+
         super().__init__(title="FEMA Image Attacher")
-        self.resizable(False, False)
         self.inputs = {}
         self.images = {}
         self.draw_widgets()
@@ -38,15 +38,18 @@ class FEMAImageAttacher(ttk.Window):
 
     def draw_widgets(self) -> None:
         """Draws the widgets for the FEMAImageAttacher class."""
-        ttk.Label(self, text="FEMA Image Attacher", font=("Arial", 20)).pack(
-            pady=15
+        ttk.Label(self, text="FEMA Image Attacher", font=("Arial", 14)).pack(
+            pady=10
         )
         self.draw_input_section()
         self.draw_image_attachment_section()
 
-        button_font = ("Arial", 16, "bold")
+        button_font = ("Arial", 12, "bold")
         button_style = ttk.Style()
-        button_style.configure("primary.TButton", font=button_font)
+        button_style.configure(
+            "primary.TButton",
+            font=button_font,
+        )
         generate_button = ttk.Button(
             self, text="Generate PDF", command=self.generate_pdf
         )
@@ -80,11 +83,11 @@ class FEMAImageAttacher(ttk.Window):
             default_entry_value (str, optional): The default value of
                 the entry. Defaults to "".
         """
-
+        font = ("Arial", 8)
         row = ttk.Frame(self)
         row.pack(pady=5, padx=25)
-        ttk.Label(row, text=label, width=20).pack(side="left")
-        self.inputs[variable_name] = ttk.Entry(row, width=50)
+        ttk.Label(row, text=label, width=20, font=font).pack(side="left")
+        self.inputs[variable_name] = ttk.Entry(row, width=50, font=font)
         self.inputs[variable_name].pack(side="left", padx=5)
 
         if default_entry_value:
@@ -95,12 +98,12 @@ class FEMAImageAttacher(ttk.Window):
         class.
         """
         attachment_row = ttk.Frame(self)
-        attachment_row.pack(pady=15)
+        attachment_row.pack(pady=20)
         self.draw_attachment_frame(attachment_row)
         self.draw_attachment_frame(attachment_row)
 
         attachment_row = ttk.Frame(self)
-        attachment_row.pack(pady=15)
+        attachment_row.pack()
         self.draw_attachment_frame(attachment_row)
         self.draw_attachment_frame(attachment_row)
 
@@ -124,21 +127,21 @@ class FEMAImageAttacher(ttk.Window):
             text="Image Placeholder",
         )
         # Padding is for a border while there is no image ---
-        image_placeholder.pack(pady=90, padx=50)
+        image_placeholder.pack(pady=67, padx=25)
 
         # Image Description ---
-        image_description = ttk.Entry(frame, width=30)
+        image_description = ttk.Entry(frame, width=24)
         image_description.pack(pady=5)
 
         # Buttons ---
         buttons = {
             "Attach Image": self.attach_image,
-            "Clear Image": self.clear_image,
+            "Clear": self.clear_image,
         }
 
         # Buttom Frame to place buttons in a row ---
         button_frame = ttk.Frame(frame)
-        button_frame.pack(pady=5)
+        button_frame.pack()
 
         for button_text, command in buttons.items():
             button = ttk.Button(
@@ -226,7 +229,7 @@ class FEMAImageAttacher(ttk.Window):
 
         description.delete(0, "end")
         label.configure(image="")
-        label.pack_configure(pady=90, padx=50)
+        label.pack_configure(pady=67, padx=25)
         logging.debug(f"Images: {self.images}")
 
     def resize_image_to_fit(self, image_path: str) -> ImageTk.PhotoImage:
